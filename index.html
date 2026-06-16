@@ -285,7 +285,7 @@
         <input id="devChart" type="text" placeholder="Paste the full embed link" autocomplete="off" spellcheck="false">
       </div>
       <div class="dev-row">
-        <button class="btn ghost" id="devClear">Clear</button>
+        <button class="btn ghost" id="devReset">Reset all</button>
         <button class="btn" id="devSave">Save &amp; sync</button>
       </div>
     </div>
@@ -347,6 +347,7 @@
     }
   }
   var lastApplied="";   /* JSON of the config currently shown on the page */
+  var DEFAULT_CA="0x0000000000000000000000000000000000000000";
 
   /* update the visible page (contract + chart) */
   function applyToPage(cfg){
@@ -354,7 +355,7 @@
     var key=JSON.stringify({ca:cfg.ca||"",chart:cfg.chart||""});
     if(key===lastApplied) return;          /* nothing changed → no flicker */
     lastApplied=key;
-    if(typeof cfg.ca==="string" && cfg.ca.trim()) document.getElementById('ca').innerText=cfg.ca.trim();
+    document.getElementById('ca').innerText=(cfg.ca && cfg.ca.trim()) ? cfg.ca.trim() : DEFAULT_CA;
     renderChart(cfg.chart);
   }
   /* fill the panel inputs (only when safe to do so) */
@@ -430,7 +431,11 @@
   document.getElementById('devUnlock').addEventListener('click',tryUnlock);
   pass.addEventListener('keydown',function(e){ if(e.key==='Enter') tryUnlock(); });
   document.getElementById('devSave').addEventListener('click',save);
-  document.getElementById('devClear').addEventListener('click',function(){ caIn.value=""; chartIn.value=""; flash("Cleared — press Save to apply",""); });
+  document.getElementById('devReset').addEventListener('click',function(){
+    if(!confirm("Reset the contract AND chart for everyone?")) return;
+    caIn.value=""; chartIn.value="";
+    save();   /* pushes empty config to the cloud → resets every visitor */
+  });
 
   load();
   setInterval(poll, POLL_MS);                                   /* live updates */

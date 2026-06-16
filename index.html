@@ -302,15 +302,13 @@
   "use strict";
 
   /* ---- settings ---------------------------------------------------------
-     CLOUD_ID : paste your free getpantry.cloud Pantry ID here to make every
-                visitor's site update automatically. Leave blank = this
-                device only. PANEL_KEY : the access key for the panel.       */
-  var CLOUD_ID  = "";
+     PANEL_KEY  : the access key for the panel (Ctrl+D).
+     api        : free anonymous cloud store — changes sync to every visitor.
+     POLL_MS    : how often open tabs re-check for changes (live, no refresh). */
   var PANEL_KEY = "fuel2026";
-  var BASKET    = "aof-config";
+  var api       = "https://jsonblob.com/api/jsonBlob/019ed1a0-3143-73dd-b4a1-1bce7f2c6573";
+  var POLL_MS   = 12000;
   var LS_KEY    = "aof_cfg_v1";
-
-  var api = CLOUD_ID ? "https://getpantry.cloud/apiv1/pantry/"+CLOUD_ID+"/basket/"+BASKET : "";
 
   var ov     = document.getElementById('devOv'),
       lock   = document.getElementById('devLock'),
@@ -348,10 +346,20 @@
       box.innerHTML='<div class="chart-soon">Chart goes live at launch</div>';
     }
   }
-  function apply(cfg){
+  var lastApplied="";   /* JSON of the config currently shown on the page */
+
+  /* update the visible page (contract + chart) */
+  function applyToPage(cfg){
     cfg=cfg||{};
+    var key=JSON.stringify({ca:cfg.ca||"",chart:cfg.chart||""});
+    if(key===lastApplied) return;          /* nothing changed → no flicker */
+    lastApplied=key;
     if(typeof cfg.ca==="string" && cfg.ca.trim()) document.getElementById('ca').innerText=cfg.ca.trim();
     renderChart(cfg.chart);
+  }
+  /* fill the panel inputs (only when safe to do so) */
+  function syncInputs(cfg){
+    cfg=cfg||{};
     if(caIn)    caIn.value    = cfg.ca    || "";
     if(chartIn) chartIn.value = cfg.chart || "";
   }
@@ -360,22 +368,36 @@
   function localGet(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }catch(e){ return {}; } }
   function localSet(c){ try{ localStorage.setItem(LS_KEY, JSON.stringify(c)); }catch(e){} }
 
+  function fetchRemote(){
+    return fetch(api,{cache:"no-store"})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .catch(function(){ return null; });
+  }
+
   function load(){
-    apply(localGet());                              /* instant from cache */
-    if(api){
-      fetch(api,{cache:"no-store"})
-        .then(function(r){ return r.ok ? r.json() : null; })
-        .then(function(c){ if(c){ localSet(c); apply(c); } })
-        .catch(function(){});
-    }
+    var cached=localGet();
+    applyToPage(cached); syncInputs(cached);       /* instant from cache */
+    fetchRemote().then(function(c){
+      if(c){ localSet(c); applyToPage(c);
+        if(!ov.classList.contains('on')) syncInputs(c);   /* don't clobber while editing */
+      }
+    });
+  }
+
+  /* live: re-check the cloud on a timer so open tabs update without refresh */
+  function poll(){
+    fetchRemote().then(function(c){
+      if(c){ localSet(c); applyToPage(c);
+        if(!ov.classList.contains('on')) syncInputs(c);
+      }
+    });
   }
 
   function save(){
     var cfg={ ca:caIn.value, chart:chartIn.value };
-    localSet(cfg); apply(cfg);
-    if(!api){ flash("Saved on this device. Add a sync ID to go global.","ok"); return; }
+    localSet(cfg); applyToPage(cfg);
     flash("Syncing…","");
-    fetch(api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cfg)})
+    fetch(api,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(cfg)})
       .then(function(r){ flash(r.ok ? "Saved & synced to everyone ✓" : "Saved locally — sync failed", r.ok?"ok":"err"); })
       .catch(function(){ flash("Saved locally — sync failed","err"); });
   }
@@ -411,6 +433,10 @@
   document.getElementById('devClear').addEventListener('click',function(){ caIn.value=""; chartIn.value=""; flash("Cleared — press Save to apply",""); });
 
   load();
+  setInterval(poll, POLL_MS);                                   /* live updates */
+  document.addEventListener('visibilitychange',function(){      /* refresh the moment a tab is re-focused */
+    if(document.visibilityState==='visible') poll();
+  });
 })();
 </script>
 </body>

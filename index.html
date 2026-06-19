@@ -347,7 +347,10 @@
     }
   }
   var lastApplied="";   /* JSON of the config currently shown on the page */
-  var DEFAULT_CA="0x0000000000000000000000000000000000000000";
+  /* baked-in defaults — shown even if the cloud store is down. The Ctrl+D
+     panel can still override these if/when the cloud sync is working. */
+  var DEFAULT_CA="DqLyjFEWGRsfJd3haSASpNhfRq63QqcFwrnkWPKjpump";
+  var DEFAULT_CHART="https://www.geckoterminal.com/solana/pools/2ZzoLZ4Mg4qJCT5P3eSvh44LpaiXQDiA47AMqiJM4vgu";
 
   /* update the visible page (contract + chart) */
   function applyToPage(cfg){
@@ -356,7 +359,7 @@
     if(key===lastApplied) return;          /* nothing changed → no flicker */
     lastApplied=key;
     document.getElementById('ca').innerText=(cfg.ca && cfg.ca.trim()) ? cfg.ca.trim() : DEFAULT_CA;
-    renderChart(cfg.chart);
+    renderChart((cfg.chart && cfg.chart.trim()) ? cfg.chart : DEFAULT_CHART);
   }
   /* fill the panel inputs (only when safe to do so) */
   function syncInputs(cfg){

@@ -91,7 +91,10 @@
   .contract{margin-top:34px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;
     background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:18px 22px}
   .contract .lab{font-weight:600;letter-spacing:1.5px;text-transform:uppercase;font-size:12px;color:var(--muted)}
-  .contract code{font-family:var(--mono);font-size:14px;color:var(--cream);word-break:break-all}
+  .contract code{font-family:var(--mono);font-size:clamp(16px,2.4vw,24px);font-weight:600;letter-spacing:.5px;color:var(--gold);word-break:break-all;
+    text-shadow:0 0 8px rgba(227,178,60,.55),0 0 22px rgba(227,178,60,.35);animation:caGlow 2.6s ease-in-out infinite}
+  @keyframes caGlow{0%,100%{text-shadow:0 0 8px rgba(227,178,60,.45),0 0 18px rgba(227,178,60,.25)}
+    50%{text-shadow:0 0 14px rgba(227,178,60,.8),0 0 30px rgba(227,178,60,.5)}}
   .copy{font-family:var(--mono);font-size:12px;letter-spacing:1px;text-transform:uppercase;background:none;border:1px solid var(--gold);color:var(--gold);padding:9px 16px;border-radius:4px;cursor:pointer;transition:background .2s,color .2s}
   .copy:hover{background:var(--gold);color:var(--ink)}
   /* live chart */
